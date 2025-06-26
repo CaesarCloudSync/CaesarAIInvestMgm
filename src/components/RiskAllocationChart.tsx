@@ -61,7 +61,7 @@ const RiskAllocationChart: React.FC<RiskAllocationChartProps> = ({ allocations }
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 ">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Risk Profile Allocation</h3>
       <div className="h-80">
         <Pie data={data} options={options} />

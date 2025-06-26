@@ -13,29 +13,44 @@ import RetirementTimelineChart from './components/RetirementTimelineChart';
 import RetirementPlanningForm from './components/RetirementPlanningForm';
 import { createPortfolio, calculateAssetAllocations, calculateRiskAllocations, calculatePotAllocations } from './utils/portfolioCalculations';
 import { calculateRetirementTimeline } from './utils/retirementCalculations';
-
+import axios from 'axios';
+import useDeviceDetect from './hooks/useDeviceDetect';
 function App() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showRetirementForm, setShowRetirementForm] = useState(false);
   const [retirementData, setRetirementData] = useState<RetirementData[]>([]);
-
+  const { isMobile, isDesktop } = useDeviceDetect();
+  const get_assets = async () => {
+    const response = await axios.get('http://localhost:8080/api/get-assets');
+    const result = response.data;
+    console.log('Assets fetched successfully:', result);
+    if (result.assets.length > 0){
+      setAssets(result.assets);
+    }
+    
+  }
   // Load data from localStorage on component mount
   useEffect(() => {
-    const savedAssets = localStorage.getItem('portfolio-assets');
-    if (savedAssets) {
-      setAssets(JSON.parse(savedAssets));
-    }
+      get_assets();
 
     const savedRetirementData = localStorage.getItem('retirement-data');
     if (savedRetirementData) {
+      console.log('Loading retirement data from localStorage:', savedRetirementData);
       setRetirementData(JSON.parse(savedRetirementData));
     }
   }, []);
+  const save_assets = async () => {
+    const response = await axios.post('http://localhost:8080/api/save-assets', { "assets":assets })
+    const result = response.data;
+    console.log('Assets saved successfully:', result);
+  }
 
   // Save data to localStorage whenever assets change
   useEffect(() => {
-    localStorage.setItem('portfolio-assets', JSON.stringify(assets));
+    console.log('Saving assets to localStorage:', assets);
+    
+      save_assets()
   }, [assets]);
 
   // Save retirement data to localStorage
@@ -115,16 +130,18 @@ function App() {
 
         {/* Charts and Asset List */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-4">
             <AssetList 
               assets={portfolio.assets} 
               onDeleteAsset={handleDeleteAsset} 
             />
           </div>
           
-          <div className="lg:col-span-1 space-y-8">
+
+        </div>
+        <div className={isMobile ? "lg:col-span-1 space-y-8": "flex flex-row space-x-20 lg:col-span-1 mt-8"}>
             {/* Inline Charts Row */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+           
               {/* Asset Type Allocation Chart */}
               {allocations.length > 0 ? (
                 <AllocationChart allocations={allocations} />
@@ -150,12 +167,9 @@ function App() {
                   <p className="text-gray-500">Add assets to see risk allocation.</p>
                 </div>
               )}
-            </div>
-
-            {/* Individual Asset Breakdown Chart */}
+                       {/* Individual Asset Breakdown Chart */}
             <AssetBreakdownChart assets={portfolio.assets} />
           </div>
-        </div>
 
         {/* Asset Pot Allocation Chart */}
         {potAllocations.length > 0 && (
